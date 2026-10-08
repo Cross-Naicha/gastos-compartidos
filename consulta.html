@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#10181e">
+  <meta name="referrer" content="no-referrer">
+  <title>Detalle de la reunión</title>
+  <link rel="stylesheet" href="resolver_gastos.css">
+  <script src="vendor/lz-string.min.js" defer></script>
+  <script src="gastos-core.js" defer></script>
+  <script src="gastos-share.js" defer></script>
+  <script src="consulta.js" defer></script>
+</head>
+<body><main>
+  <header><small>Una cuenta clara</small><h1>Detalle de la reunión</h1><p class="muted">Esta es una copia de la cuenta compartida. Podés consultarla y preparar tus mensajes de cobro.</p></header>
+  <p id="viewerError" class="notice" hidden role="alert"></p>
+  <div id="viewerContent" hidden>
+    <section class="card"><h2>Tu parte de la cuenta</h2>
+      <label>Soy…<select id="identity" autocomplete="off"><option value="">Elegí tu nombre</option></select></label>
+      <div id="mySummary" aria-live="polite"></div>
+      <div id="aliasField" hidden><label>Tu alias bancario<input id="bankAlias" maxlength="100" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Escribí tu alias para pedir las transferencias"></label></div>
+      <div id="myRequests"></div>
+      <p class="share-help">Tu nombre elegido y tu alias se usan solo mientras esta página está abierta. Al recargar o cerrar se borran.</p>
+    </section>
+    <section class="card"><h2 id="viewerMethod">Distribución</h2><div id="viewerTransfers"></div></section>
+    <section class="card"><h2>Detalle de gastos</h2><div id="viewerExpenses"></div><p id="viewerTotal" class="report-total"></p></section>
+    <section class="card" id="viewerConsumptionCard"><h2>Consumo por persona</h2><div id="viewerConsumption"></div></section>
+  </div>
+  <footer>Los datos llegan en el enlace. Esta página no guarda reuniones, identidad ni alias en el almacenamiento del navegador. Elegir un nombre personaliza la vista; no verifica la identidad.</footer>
+</main></body>
+</html>

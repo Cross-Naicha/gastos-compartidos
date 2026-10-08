@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#10181e" />
+    <title>Gastos compartidos</title>
+    <link rel="stylesheet" href="resolver_gastos.css" />
+    <script src="vendor/lz-string.min.js" defer></script>
+    <script src="vendor/qrcode.js" defer></script>
+    <script src="gastos-core.js" defer></script>
+    <script src="gastos-share.js" defer></script>
+    <script src="resolver_gastos.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <header id="start">
+        <small>Una cuenta clara</small>
+        <h1>Gastos compartidos</h1>
+        <p class="muted">
+          Cargá quiénes participaron y qué pagó cada persona. Compará dos formas
+          de saldar las cuentas.
+        </p>
+      </header>
+      <section class="card start-options" aria-label="Elegir reunión">
+        <h2>Tu reunión</h2>
+        <div class="meeting-actions"><button id="classic">Clásico</button><button id="newMeeting" class="secondary">Nuevo</button><button id="reset" class="secondary reset-icon" aria-label="Reiniciar reunión" title="Reiniciar reunión">↻</button></div>
+        <p class="muted">Clásico: Nicolás, Emilio, Mario y Benja. Nuevo: empezá con una lista vacía.</p>
+      </section>
+      <div id="message" role="status" aria-live="polite"></div>
+      <div class="grid">
+        <section class="card" id="peopleSection">
+          <h2>1. Personas</h2>
+          <form id="personForm" class="row">
+            <label
+              >Nombre<input
+                id="name"
+                required
+                maxlength="60"
+                placeholder="Ej.: Ana"
+                autocomplete="off" autocapitalize="words" enterkeyhint="done" /></label
+            ><button>Agregar</button>
+          </form>
+          <div id="people"></div>
+        </section>
+        <section class="card" id="expensesSection">
+          <h2>2. Gastos</h2>
+          <div class="mode-control"><span>Partes iguales</span><button id="splitMode" type="button" role="switch" aria-checked="false" aria-label="Repartir por consumo"><span class="switch-knob"></span></button><span>Por consumo</span></div>
+          <p class="muted" id="modeHelp"></p>
+          <form id="expenseForm">
+            <div class="row">
+              <label>Quién pagó<select id="payer" required></select></label
+              ><label
+                >Importe<input
+                  id="amount"
+                  inputmode="decimal" autocomplete="off" enterkeyhint="next"
+                  required
+                  placeholder="Ej.: 2500,50"
+              /></label>
+            </div>
+            <label class="detail-field"
+              >Detalle<input
+                id="description" enterkeyhint="done"
+                maxlength="100"
+                placeholder="Ej.: bebidas"
+                required /></label
+            >
+            <fieldset id="participantsField" hidden><legend>¿Quiénes comparten este gasto?</legend><div id="participants"></div></fieldset>
+            <button class="expense-submit">
+              Agregar gasto
+            </button>
+          </form>
+          <div id="expenses"></div>
+        </section>
+      </div>
+      <section class="card" id="balanceSection">
+        <h2>3. Balance</h2>
+        <p class="muted" id="balanceHelp">
+          Todos los gastos se reparten por igual entre todas las personas,
+          incluyendo quienes no pagaron nada. Los centavos sobrantes se asignan
+          en el orden de la lista.
+        </p>
+        <div class="totals" id="totals"></div>
+        <div id="balances"></div>
+      </section>
+      <section class="card comparison" id="comparison">
+        <div class="row comparison-heading">
+          <h2>4. Comparar distribuciones</h2>
+          <button id="calculate">Calcular las dos</button>
+        </div>
+        <p class="muted">
+          Las transferencias propuestas saldan el mismo balance. Podés agregar
+          gastos y volver a calcular para experimentar.
+        </p>
+        <div class="grid">
+          <article id="greedyCard">
+            <h3 id="distributionTitle">Greedy: mayor aportante primero</h3>
+            <p class="muted" id="greedyDescription">
+              Quien más adelantó recupera todo su excedente primero. Los
+              deudores pagan en orden de mayor deuda inicial.
+            </p>
+            <div id="greedy" class="empty">Todavía no calculaste.</div>
+          </article>
+          <article id="optimalCard">
+            <h3>Menor número de transferencias</h3>
+            <p class="muted">
+              Explora combinaciones para reducir la cantidad de pagos, sin
+              priorizar quién cobra primero.
+            </p>
+            <div id="optimal" class="empty">Todavía no calculaste.</div>
+          </article>
+        </div>
+        <div id="shareActions" hidden></div>
+        <div id="personalMessages" hidden></div>
+        <section id="qrShare" class="report-section" hidden>
+          <h3>Compartir la cuenta por QR</h3>
+          <p class="muted">El QR abre una copia de esta reunión. Si cambiás los gastos, generá uno nuevo.</p>
+          <label id="qrMethodLabel">Distribución para compartir<select id="qrMethod"></select></label>
+          <button id="generateQr" class="expense-submit" type="button">Generar QR y enlace</button>
+          <div id="qrOutput" hidden>
+            <div id="qrImage" class="qr-image" role="img" aria-label="QR para consultar esta cuenta"></div>
+            <p id="qrNotice" class="muted" role="status"></p>
+            <label>Enlace a la cuenta<input id="shareUrl" readonly autocomplete="off"></label>
+            <div class="share-buttons"><button id="copyShareUrl" class="secondary" type="button">Copiar enlace</button><a id="openShared" class="whatsapp-share" target="_blank" rel="noopener noreferrer">Abrir consulta</a></div>
+            <p class="share-help">Cualquiera con este enlace puede consultar la cuenta y elegir su nombre.</p>
+          </div>
+        </section>
+      </section>
+      <section class="card" id="detailsSection">
+        <h2>5. Gastos y consumos</h2>
+        <div id="sharedReport"></div>
+      </section>
+      <footer>
+        Importes en pesos. Los datos se guardan únicamente en este navegador
+        cuando está disponible el almacenamiento local. Solo se comparten cuando elegís enviar el resumen por WhatsApp.
+      </footer>
+    </main>
+    <div class="quick-navigation">
+      <nav id="sectionMenu" aria-label="Ir a una sección" hidden>
+        <a href="#start">Inicio</a><a href="#peopleSection">Personas</a><a href="#expensesSection">Cargar gastos</a><a href="#balanceSection">Balance</a><a href="#comparison">Distribuciones</a><a href="#detailsSection">Gastos y consumos</a>
+      </nav>
+      <button id="sectionToggle" aria-expanded="false" aria-controls="sectionMenu">☰ Secciones</button>
+    </div>
+  </body>
+</html>
