@@ -437,21 +437,11 @@ function startMeeting(names) {
   state = { mode: 'equal', people: names.map(name => ({ id: uid(), name })), expenses: [] };
   $("expenseForm").reset();
   say(''); saveRender();
+  $("peopleSection").expandSection?.();
   $("peopleSection").scrollIntoView({ block: 'start' });
 }
 $("classic").addEventListener('click', () => startMeeting(['Nicolás', 'Emilio', 'Mario', 'Benja']));
 $("newMeeting").addEventListener('click', () => startMeeting([]));
-function closeSectionMenu() {
-  $("sectionMenu").hidden = true;
-  $("sectionToggle").setAttribute('aria-expanded', 'false');
-}
-$("sectionToggle").addEventListener('click', () => {
-  const open = $("sectionMenu").hidden;
-  $("sectionMenu").hidden = !open;
-  $("sectionToggle").setAttribute('aria-expanded', String(open));
-});
-$("sectionMenu").addEventListener('click', event => { if (event.target.closest('a')) closeSectionMenu(); });
-document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSectionMenu(); });
 $("generateQr").addEventListener('click', () => {
   if (!calculatedDistributions) return say('Calculá las distribuciones primero.');
   try {

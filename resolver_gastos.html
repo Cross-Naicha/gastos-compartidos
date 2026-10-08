@@ -5,14 +5,29 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#10181e" />
     <title>Gastos compartidos</title>
-    <link rel="stylesheet" href="resolver_gastos.css" />
-    <script src="vendor/lz-string.min.js" defer></script>
-    <script src="vendor/qrcode.js" defer></script>
-    <script src="gastos-core.js" defer></script>
-    <script src="gastos-share.js" defer></script>
-    <script src="resolver_gastos.js" defer></script>
-  </head>
+
+
+
+
+
+
+
+  <script>
+      const refreshVersion = new URLSearchParams(location.search).get('actualizar');
+      const assetVersion = refreshVersion && /^\d{10,16}$/.test(refreshVersion) ? refreshVersion : '20261008-ui';
+      const assets = [["resolver_gastos.css", false], ["vendor/lz-string.min.js", true], ["vendor/qrcode.js", true], ["gastos-core.js", true], ["gastos-share.js", true], ["resolver_gastos.js", true], ["ui.js", true]];
+      for (const [path, script] of assets) {
+        const assetPath = path + '?v=' + assetVersion;
+        document.write(script ? '<script src="' + assetPath + '" defer><\/script>' : '<link rel="stylesheet" href="' + assetPath + '">');
+      }
+    </script>
+</head>
   <body>
+    <div class="page-options">
+      <button id="optionsToggle" class="options-toggle" type="button" aria-label="Opciones" aria-controls="optionsMenu" aria-expanded="false"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="m9 3-.7 2.5-2 .9-2.3-.6-2 3.4 1.7 1.9v2.2L2 15.2l2 3.4 2.3-.6 2 .9L9 21h4l.7-2.1 2-.9 2.3.6 2-3.4-1.7-1.9v-2.2L20 9.2l-2-3.4-2.3.6-2-.9L13 3Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="11" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+      <div id="optionsMenu" class="options-menu" hidden><button id="refreshPage" type="button">Actualizar página</button><p class="share-help">Buscar la versión más reciente.</p><p id="updateStatus" class="share-help" role="status"></p></div>
+    </div>
+
     <main>
       <header id="start">
         <small>Una cuenta clara</small>
