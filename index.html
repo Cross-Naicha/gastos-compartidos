@@ -65,7 +65,7 @@
                 placeholder="Ej.: bebidas"
                 required /></label
             >
-            <fieldset id="participantsField" hidden><legend>¿Quiénes comparten este gasto?</legend><div id="participants"></div></fieldset>
+            <fieldset id="participantsField" hidden><legend>¿Cómo se reparte este gasto?</legend><label>Reparto<select id="expenseSplit"><option value="shared">Dividir entre participantes</option><option value="individual">Importes individuales</option></select></label><div id="participants"></div><div id="individualAmounts" hidden></div><p id="allocationStatus" class="share-help" role="status" aria-live="polite" hidden></p></fieldset>
             <button class="expense-submit">
               Agregar gasto
             </button>

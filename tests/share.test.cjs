@@ -46,7 +46,7 @@ test('Consumption details use the same cent rounding as balances',()=>{
 test('Invalid indices, amounts, empty groups and unsettled payments rejected',()=>{
   const {context:c}=runtime(),s=fixture(),g=c.GastosCore.greedy(c.GastosCore.balance(s).rows);
   const base=c.GastosShare.pack(s,g,'greedy');
-  for(const mutate of [d=>d.e[0][2]=999,d=>d.e[0][1]=-1,d=>d.e[0][3]=[],d=>d.t=[],d=>d.t[0][2]++,d=>d.p[0]='',d=>d.v=2]) {
+  for(const mutate of [d=>d.e[0][2]=999,d=>d.e[0][1]=-1,d=>d.e[0][3]=[],d=>d.t=[],d=>d.t[0][2]++,d=>d.p[0]='',d=>d.v=3]) {
     const data=JSON.parse(JSON.stringify(base));mutate(data);assert.throws(()=>c.GastosShare.unpack(data));
   }
   assert.throws(()=>c.GastosShare.decode('bad'));
@@ -71,4 +71,31 @@ test('QR generator handles encoded account link locally',()=>{
   const {context:c}=runtime();vm.runInContext(fs.readFileSync(path.join(root,'vendor/qrcode.js'),'utf8'),c);
   const s=fixture(),g=c.GastosCore.greedy(c.GastosCore.balance(s).rows),url=c.GastosShare.link(s,g,'distribution');
   const qr=c.qrcode(0,'M');qr.addData(url,'Byte');qr.make();assert.match(qr.createSvgTag({scalable:true}),/<svg/);
+});
+test('Individual amounts and shared expenses use the same exact balances and survive QR encoding',()=>{
+  const {context:c}=runtime();
+  const s={mode:'consumption',people:['Nicolás','Emilio','Mario','Benja'].map((name,i)=>({id:String(i),name})),expenses:[
+    {id:'e',payer:'0',description:'12 empanadas',cents:1800000,participants:null,allocations:[{id:'1',cents:500000},{id:'2',cents:700000},{id:'3',cents:600000}]},
+    {id:'f',payer:'1',description:'Bebidas',cents:10001,participants:null}
+  ]};
+  const b=c.GastosCore.balance(s),d=c.GastosCore.consumptionDetails(s);
+  assert.deepEqual(Array.from(b.rows,p=>p.share),[2501,502500,702500,602500]);
+  assert.equal(d[0].items.length,1);assert.equal(d[2].items[0].cents,700000);
+  assert.equal(b.rows.reduce((sum,p)=>sum+p.balance,0),0);
+  const g=c.GastosCore.greedy(b.rows),o=c.GastosCore.efficient(b.rows,g);
+  for(const transfers of [g,o.transfers]) {
+    const result=c.GastosShare.decode(c.GastosShare.encode(s,transfers,'greedy'));
+    assert.deepEqual(Array.from(c.GastosCore.balance(result.state).rows,p=>p.share),Array.from(b.rows,p=>p.share));
+    assert.equal(result.state.expenses[0].allocations[1].cents,700000);
+  }
+  s.mode='equal';assert.deepEqual(Array.from(c.GastosCore.balance(s).rows,p=>p.share),[452501,452500,452500,452500]);
+  s.mode='consumption';assert.equal(c.GastosCore.balance(s).rows[2].share,702500);
+});
+test('Malformed individual allocations rejected and old v1 links remain supported',()=>{
+  const {context:c}=runtime(),s=fixture(),g=c.GastosCore.greedy(c.GastosCore.balance(s).rows),base=c.GastosShare.pack(s,g,'greedy');
+  for(const allocations of [[],[[0,900]],[[99,901]],[[0,902]],[[0,-1],[1,902]],[[0,500],[0,401]],[[0,0],[1,901]],[[0,900.5]]]) {
+    const data=JSON.parse(JSON.stringify(base));data.e[0][4]=allocations;assert.throws(()=>c.GastosShare.unpack(data));
+  }
+  const old=JSON.parse(JSON.stringify(base));old.v=1;old.e.forEach(e=>e.pop());
+  assert.equal(c.GastosShare.unpack(old).state.expenses[0].allocations,null);
 });

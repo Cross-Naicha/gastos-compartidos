@@ -2,6 +2,8 @@
 
 Aplicación estática para reuniones: personas, gastos, reparto en partes iguales o por consumo, comparación de distribuciones y mensajes de WhatsApp.
 
+En **Por consumo**, cada gasto puede dividirse entre participantes o cargarse con **Importes individuales**. Escribí el consumo de cada persona y dejá vacío a quien no consumió. La suma debe coincidir exactamente con el importe pagado. Los gastos ya cargados permiten editar el reparto y guardar los importes. Al pasar temporalmente a Partes iguales, se conserva la asignación para cuando vuelvas a Por consumo. El QR también conserva los importes individuales; los enlaces anteriores siguen funcionando.
+
 ## Usar
 
 Abrí `index.html` o visitá https://cross-naicha.github.io/gastos-compartidos/ . Calculá las distribuciones y elegí **Generar QR y enlace**. Si hay dos resultados, seleccioná cuál compartir.

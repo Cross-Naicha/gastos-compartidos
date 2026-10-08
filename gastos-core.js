@@ -1,16 +1,30 @@
 "use strict";
 (function(root) {
 function consumers(state, expense) {
+  if (state.mode === 'consumption' && expense.allocations) return state.people.filter(p => expense.allocations.some(a => a.id === p.id && a.cents > 0));
   return state.people.filter(p => state.mode !== "consumption" || !expense.participants || expense.participants.includes(p.id));
+}
+function validAllocations(state, expense) {
+  if (expense.allocations == null) return true;
+  const a = expense.allocations;
+  return Array.isArray(a) && a.length > 0 && new Set(a.map(x => x?.id)).size === a.length &&
+    a.every(x => x && state.people.some(p => p.id === x.id) && Number.isSafeInteger(x.cents) && x.cents > 0) &&
+    Number.isSafeInteger(a.reduce((sum,x) => sum+x.cents,0)) && a.reduce((sum,x) => sum+x.cents,0) === expense.cents;
+}
+function expenseShares(state, expense) {
+  if (state.mode === 'consumption' && expense.allocations) {
+    if (!validAllocations(state, expense)) throw new Error('Los importes individuales deben sumar el total del gasto.');
+    return expense.allocations;
+  }
+  const group = consumers(state, expense);
+  return group.map((p,i) => ({id:p.id, cents:Math.floor(expense.cents/group.length)+(i<expense.cents%group.length?1:0)}));
 }
 function consumptionDetails(state) {
   const rows = state.people.map(p => ({ ...p, items: [], total: 0 }));
   const byId = new Map(rows.map(p => [p.id, p]));
   for (const expense of state.expenses) {
-    const group = consumers(state, expense);
-    group.forEach((p, i) => {
-      const cents = Math.floor(expense.cents / group.length) + (i < expense.cents % group.length ? 1 : 0);
-      const row = byId.get(p.id);
+    expenseShares(state, expense).forEach(({id, cents}) => {
+      const row = byId.get(id);
       row.items.push({ description: expense.description, cents });
       row.total += cents;
     });
@@ -26,8 +40,7 @@ function balance(state) {
     paid.set(e.payer, paid.get(e.payer) + e.cents);
   if (state.mode === "consumption") {
     for (const e of state.expenses) {
-      const group = consumers(state, e);
-      group.forEach((p,i) => shares.set(p.id, shares.get(p.id) + Math.floor(e.cents / group.length) + (i < e.cents % group.length ? 1 : 0)));
+      expenseShares(state, e).forEach(a => shares.set(a.id, shares.get(a.id) + a.cents));
     }
   } else state.people.forEach((p,i) => shares.set(p.id, Math.floor(total/n) + (i < total%n ? 1 : 0)));
   return {
@@ -109,5 +122,5 @@ function efficient(rows, initial) {
   search(0);
   return { transfers: best, complete };
 }
-root.GastosCore = { consumers, consumptionDetails, balance, greedy, efficient };
+root.GastosCore = { consumers, consumptionDetails, balance, greedy, efficient, expenseShares, validAllocations };
 })(globalThis);

@@ -3,24 +3,26 @@
   const PUBLIC_URL = 'https://cross-naicha.github.io/gastos-compartidos/consulta.html';
   function pack(state, transfers, method) {
     const index = new Map(state.people.map((p,i) => [p.id,i]));
-    return { v: 1, m: state.mode, k: method, p: state.people.map(p => p.name),
-      e: state.expenses.map(e => [e.description,e.cents,index.get(e.payer),e.participants ? e.participants.map(id => index.get(id)) : null]),
+    return { v: 2, m: state.mode, k: method, p: state.people.map(p => p.name),
+      e: state.expenses.map(e => [e.description,e.cents,index.get(e.payer),e.participants ? e.participants.map(id => index.get(id)) : null,e.allocations ? e.allocations.map(a => [index.get(a.id),a.cents]) : null]),
       t: transfers.map(t => [index.get(t.from), index.get(t.to), t.amount]) };
   }
   function unpack(data) {
     const fail = () => { throw new Error('El enlace no contiene una reunión válida.'); };
-    if (!data || data.v !== 1 || !['equal','consumption'].includes(data.m) || !['greedy','optimal','distribution'].includes(data.k) ||
+    if (!data || ![1,2].includes(data.v) || !['equal','consumption'].includes(data.m) || !['greedy','optimal','distribution'].includes(data.k) ||
       !Array.isArray(data.p) || !data.p.length || data.p.length > 100 ||
       !data.p.every(n => typeof n === 'string' && n.trim() && n.length <= 60) ||
       !Array.isArray(data.e) || data.e.length > 500 || !Array.isArray(data.t) || data.t.length > 200) fail();
     const validIndex = i => Number.isInteger(i) && i >= 0 && i < data.p.length;
     let total = 0;
     const expenses = data.e.map((e,i) => {
-      if (!Array.isArray(e) || e.length !== 4 || typeof e[0] !== 'string' || !e[0].trim() || e[0].length > 100 ||
+      if (!Array.isArray(e) || e.length !== (data.v === 1 ? 4 : 5) || typeof e[0] !== 'string' || !e[0].trim() || e[0].length > 100 ||
         !Number.isSafeInteger(e[1]) || e[1] <= 0 || !validIndex(e[2]) ||
         (e[3] !== null && (!Array.isArray(e[3]) || !e[3].length || !e[3].every(validIndex) || new Set(e[3]).size !== e[3].length))) fail();
       total += e[1]; if (!Number.isSafeInteger(total)) fail();
-      return { id: String(i), description: e[0], cents: e[1], payer: String(e[2]), participants: e[3] === null ? null : e[3].map(String) };
+      const allocations = data.v === 1 || e[4] === null ? null : e[4];
+      if (allocations !== null && (!Array.isArray(allocations) || !allocations.length || !allocations.every(a => Array.isArray(a) && a.length === 2 && validIndex(a[0]) && Number.isSafeInteger(a[1]) && a[1] > 0) || new Set(allocations.map(a => a[0])).size !== allocations.length || allocations.reduce((sum,a) => sum+a[1],0) !== e[1])) fail();
+      return { id: String(i), description: e[0], cents: e[1], payer: String(e[2]), participants: e[3] === null ? null : e[3].map(String), allocations: allocations === null ? null : allocations.map(a => ({id:String(a[0]),cents:a[1]})) };
     });
     const state = { mode: data.m, people: data.p.map((name,i) => ({id:String(i),name})), expenses };
     const transfers = data.t.map(t => {

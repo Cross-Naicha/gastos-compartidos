@@ -307,4 +307,8 @@ section, header { scroll-margin-top: 16px; }
 #qrOutput .share-buttons { align-items: end; margin-top: 12px; }
 #qrOutput .whatsapp-share { margin-top: 0; }
 #mySummary h3 { margin-top: 20px; }
+.individual-amount { display: grid; grid-template-columns: minmax(0,1fr) minmax(110px,.7fr); align-items: center; gap: 12px; margin-top: 10px; overflow-wrap: anywhere; }
+.individual-amount input { margin-top: 0; text-align: right; }
+.allocation-valid { color: #89e5bd; }
+[data-save-allocations] { width: 100%; margin-top: 8px; }
 @media (prefers-reduced-motion: reduce) { .switch-knob { transition: none; } }
