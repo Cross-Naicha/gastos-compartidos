@@ -382,3 +382,24 @@ section, header { scroll-margin-top: 16px; }
 #personForm { grid-template-columns: minmax(0, 1fr) 60px; }
 #personForm input, #personForm > button { height: 60px; min-height: 60px; border-radius: 16px; }
 #personForm > button { width: 60px; padding: 0; font-size: 32px; line-height: 1; }
+
+#expensesSection input:not([type="checkbox"]), #expensesSection select { height: 60px; min-height: 60px; border-radius: 16px; }
+#expensesSection input:focus-visible, #expensesSection select:focus-visible { outline-offset: -3px; }
+#expenses { display: grid; gap: 12px; margin-top: 18px; }
+.expense-card { min-width: 0; border: 1px solid #51b99b55; border-radius: 16px; background: linear-gradient(135deg, #155a49, #124537); color: #edfff7; box-shadow: inset 0 1px 0 #ffffff0d, 0 3px 10px #0002; }
+.expense-card[data-tone="1"] { background: linear-gradient(135deg, #25634e, #1b4d3d); border-color: #83c9a655; }
+.expense-card[data-tone="2"] { background: linear-gradient(135deg, #145d59, #104642); border-color: #5fc5b755; }
+.expense-card[data-tone="3"] { background: linear-gradient(135deg, #3c6147, #2b4c36); border-color: #a3c58e55; }
+.expense-card > summary { display: grid; grid-template-columns: minmax(0,1fr) auto 18px; align-items: center; gap: 10px; padding: 16px 14px; cursor: pointer; list-style: none; border-radius: 16px; min-height: 76px; touch-action: manipulation; }
+.expense-card > summary::-webkit-details-marker { display: none; }
+.expense-card > summary:focus-visible { outline: 3px solid #e9aa35; outline-offset: -3px; }
+.expense-card-title { min-width: 0; overflow-wrap: anywhere; font-weight: 650; }
+.expense-card-title small { display: block; margin-top: 5px; color: #d0e9dd; font-size: 12px; font-weight: 400; line-height: 1.5; }
+.expense-card .amount { font-size: 15px; white-space: normal; overflow-wrap: anywhere; max-width: 110px; text-align: right; }
+.expense-chevron { text-align: center; transition: transform 180ms ease; }
+.expense-card[open] .expense-chevron { transform: rotate(180deg); }
+.expense-card-body { margin: 0 12px 12px; padding: 4px 12px 12px; border-radius: 12px; background: #101e2380; }
+.expense-card-body fieldset { border-color: #73ac9766; }
+.expense-card-body .share-help { color: #d0e9dd; }
+.expense-card-body .expense-delete { width: 100%; margin-top: 14px; background: #ffffff0d; color: #ffd8d8; border: 1px solid #e5a4a433; font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { .expense-chevron { transition: none; } }

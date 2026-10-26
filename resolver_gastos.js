@@ -80,7 +80,7 @@ function allocationSummary(container, total, target) {
 function expenseEditor(e) {
   const individual = !!e.allocations;
   const suggested = e.allocations || GastosCore.expenseShares(state,e);
-  return `<details class="expense-participants"><summary>${individual ? 'Importes individuales · editar' : 'Editar reparto'}</summary><fieldset data-sharing="${escape(e.id)}"><legend>Reparto del gasto</legend><label>Reparto<select data-expense-split><option value="shared" ${!individual?'selected':''}>Dividir entre participantes</option><option value="individual" ${individual?'selected':''}>Importes individuales</option></select></label><div data-shared ${individual?'hidden':''}>${participantOptions(e.participants)}</div><div data-individual ${!individual?'hidden':''}>${individualFields(suggested)}<p class="share-help">Dejá vacío a quien no consumió. Guardá los cambios para aplicarlos.</p><p data-allocation-status class="share-help" role="status" aria-live="polite"></p><button type="button" data-save-allocations>Guardar reparto</button></div></fieldset></details>`;
+  return `<div class="expense-participants"><fieldset data-sharing="${escape(e.id)}"><legend>Reparto del gasto</legend><label>Reparto<select data-expense-split><option value="shared" ${!individual?'selected':''}>Dividir entre participantes</option><option value="individual" ${individual?'selected':''}>Importes individuales</option></select></label><div data-shared ${individual?'hidden':''}>${participantOptions(e.participants)}</div><div data-individual ${!individual?'hidden':''}>${individualFields(suggested)}<p class="share-help">Dejá vacío a quien no consumió. Guardá los cambios para aplicarlos.</p><p data-allocation-status class="share-help" role="status" aria-live="polite"></p><button type="button" data-save-allocations>Guardar reparto</button></div></fieldset></div>`;
 }
 function reopenExpense(id) {
   const field = Array.from($("expenses").querySelectorAll('[data-sharing]')).find(e => e.dataset.sharing === id);
@@ -153,7 +153,6 @@ function render() {
       .join("") ||
     '<p class="empty">Agregá también a quienes no hicieron gastos.</p>';
   $("payer").innerHTML =
-    '<option value="">Elegí una persona</option>' +
     state.people
       .map(
         (p) =>
@@ -166,7 +165,7 @@ function render() {
     state.expenses
       .map(
         (e) =>
-          `<div class="item"><span>${escape(e.description)}<br><small>${escape(state.people.find((p) => p.id === e.payer).name)}</small></span><span class="amount">${money(e.cents)}</span><button class="remove" data-expense="${escape(e.id)}" aria-label="Eliminar gasto ${escape(e.description)}">✕</button>${consumption ? expenseEditor(e) : ''}</div>`,
+          `<details class="expense-card" data-tone="${state.people.findIndex(p => p.id === e.payer) % 4}"><summary><span class="expense-card-title">${escape(e.description)}<small>Pagó ${escape(state.people.find((p) => p.id === e.payer).name)} · ${consumption ? (e.allocations ? 'Importes individuales' : 'Repartido entre ' + consumers(e).length) : 'Partes iguales'}</small></span><strong class="amount">${money(e.cents)}</strong><span class="expense-chevron" aria-hidden="true">⌄</span></summary><div class="expense-card-body">${consumption ? expenseEditor(e) : '<p class="share-help">Este gasto se divide por igual entre todas las personas.</p>'}<button type="button" class="remove expense-delete" data-expense="${escape(e.id)}" aria-label="Eliminar gasto ${escape(e.description)}">Eliminar gasto</button></div></details>`,
       )
       .join("") || '<p class="empty">Todavía no hay gastos.</p>';
   const b = balance();
