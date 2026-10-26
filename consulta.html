@@ -14,7 +14,7 @@
 
 <script>
       const refreshVersion = new URLSearchParams(location.search).get('actualizar');
-      const assetVersion = refreshVersion && /^\d{10,16}$/.test(refreshVersion) ? refreshVersion : '20261025-back';
+      const assetVersion = refreshVersion && /^\d{10,16}$/.test(refreshVersion) ? refreshVersion : '20261025-float';
       const assets = [["resolver_gastos.css", false], ["vendor/lz-string.min.js", true], ["gastos-core.js", true], ["gastos-share.js", true], ["consulta.js", true], ["ui.js", true]];
       for (const [path, script] of assets) {
         const assetPath = path + '?v=' + assetVersion;
@@ -28,7 +28,7 @@
       <div id="optionsMenu" class="options-menu" hidden><button id="refreshPage" type="button">Actualizar página</button><p class="share-help">Buscar la versión más reciente.</p><p id="updateStatus" class="share-help" role="status"></p></div>
     </div>
 <main>
-  <header><a class="back-to-app" href="index.html">← Volver a la aplicación</a><small>Una cuenta clara</small><h1>Detalle de la reunión</h1><p class="muted">Esta es una copia de la cuenta compartida. Podés consultarla y preparar tus mensajes de cobro.</p></header>
+  <header><small>Una cuenta clara</small><h1>Detalle de la reunión</h1><p class="muted">Esta es una copia de la cuenta compartida. Podés consultarla y preparar tus mensajes de cobro.</p></header>
   <p id="viewerError" class="notice" hidden role="alert"></p>
   <div id="viewerContent" hidden>
     <section class="card"><h2>Tu parte de la cuenta</h2>
@@ -43,5 +43,5 @@
     <section class="card" id="viewerConsumptionCard"><h2>Consumo por persona</h2><div id="viewerConsumption"></div></section>
   </div>
   <footer>Los datos llegan en el enlace. Esta página no guarda reuniones, identidad ni alias en el almacenamiento del navegador. Elegir un nombre personaliza la vista; no verifica la identidad.</footer>
-</main></body>
+</main><a class="back-to-app" href="index.html">← Volver a la aplicación</a></body>
 </html>
