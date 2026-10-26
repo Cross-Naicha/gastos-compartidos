@@ -378,3 +378,7 @@ section, header { scroll-margin-top: 16px; }
 .person-chip > button.remove { flex: 0 0 40px; min-height: 44px; padding: 0; border: 0; border-radius: 12px; background: transparent; color: #d5f5e7; font-size: 16px; }
 .person-chip > button.remove:hover { background: #ffffff18; color: #fff; }
 .person-chip > button.remove:active { background: #ffffff28; }
+
+#personForm { grid-template-columns: minmax(0, 1fr) 60px; }
+#personForm input, #personForm > button { height: 60px; min-height: 60px; border-radius: 16px; }
+#personForm > button { width: 60px; padding: 0; font-size: 32px; line-height: 1; }
