@@ -46,7 +46,7 @@ test('Consumption details use the same cent rounding as balances',()=>{
 test('Invalid indices, amounts, empty groups and unsettled payments rejected',()=>{
   const {context:c}=runtime(),s=fixture(),g=c.GastosCore.greedy(c.GastosCore.balance(s).rows);
   const base=c.GastosShare.pack(s,g,'greedy');
-  for(const mutate of [d=>d.e[0][2]=999,d=>d.e[0][1]=-1,d=>d.e[0][3]=[],d=>d.t=[],d=>d.t[0][2]++,d=>d.p[0]='',d=>d.v=3]) {
+  for(const mutate of [d=>d.e[0][2]=999,d=>d.e[0][1]=-1,d=>d.e[0][3]=[],d=>d.t=[],d=>d.t[0][2]++,d=>d.p[0]='',d=>d.v=99]) {
     const data=JSON.parse(JSON.stringify(base));mutate(data);assert.throws(()=>c.GastosShare.unpack(data));
   }
   assert.throws(()=>c.GastosShare.decode('bad'));
@@ -96,6 +96,37 @@ test('Malformed individual allocations rejected and old v1 links remain supporte
   for(const allocations of [[],[[0,900]],[[99,901]],[[0,902]],[[0,-1],[1,902]],[[0,500],[0,401]],[[0,0],[1,901]],[[0,900.5]]]) {
     const data=JSON.parse(JSON.stringify(base));data.e[0][4]=allocations;assert.throws(()=>c.GastosShare.unpack(data));
   }
-  const old=JSON.parse(JSON.stringify(base));old.v=1;old.e.forEach(e=>e.pop());
+  const old=JSON.parse(JSON.stringify(base));old.v=1;old.e=old.e.map(e=>e.slice(0,4));
   assert.equal(c.GastosShare.unpack(old).state.expenses[0].allocations,null);
+});
+
+test('Units with different varieties settle exactly and survive shared links',()=>{
+  const {context:c}=runtime(),s=fixture();
+  const units=[
+    {name:'comunes',quantity:8,cents:1200000,counts:[{id:'b',quantity:3},{id:'c',quantity:5}]},
+    {name:'especiales',quantity:4,cents:800000,counts:[{id:'a',quantity:1},{id:'c',quantity:3}]}
+  ];
+  const allocations=c.GastosCore.unitAllocations(s,units,2000000);
+  assert.deepEqual(Array.from(allocations,a=>[a.id,a.cents]),[['a',200000],['b',450000],['c',1350000]]);
+  s.expenses=[{id:'units',description:'Empanadas',payer:'a',cents:2000000,participants:null,units,allocations}];
+  const transfers=c.GastosCore.greedy(c.GastosCore.balance(s).rows);
+  const result=c.GastosShare.decode(c.GastosShare.encode(s,transfers,'distribution'));
+  assert.equal(result.state.expenses[0].units[1].name,'especiales');
+  assert.match(c.GastosCore.consumptionDetails(result.state)[2].items[0].description,/5 comunes \+ 3 especiales/);
+  assert.equal(c.GastosCore.balance(result.state).rows.reduce((sum,p)=>sum+p.balance,0),0);
+  for(const mutate of [u=>u[0].counts[0].quantity++,u=>u[1].cents++,u=>u[0].quantity=1.5,u=>u[0].counts[0].id='missing',u=>u[0].counts[0].quantity=-1,u=>u[0].counts.push({...u[0].counts[0]})]) {
+    const invalid=JSON.parse(JSON.stringify(units));mutate(invalid);
+    assert.throws(()=>c.GastosCore.unitAllocations(s,invalid,2000000));
+  }
+  const packed=c.GastosShare.pack(s,transfers,'distribution');packed.e[0][5][0][3][0][1]++;
+  assert.throws(()=>c.GastosShare.unpack(packed));
+});
+
+test('Unit rounding conserves cents and legacy v2 reports remain readable',()=>{
+  const {context:c}=runtime(),s=fixture();
+  const units=[{name:'porciones',quantity:3,cents:100,counts:s.people.map(p=>({id:p.id,quantity:1}))}];
+  assert.deepEqual(Array.from(c.GastosCore.unitAllocations(s,units,100),a=>a.cents),[34,33,33]);
+  const g=c.GastosCore.greedy(c.GastosCore.balance(s).rows),old=c.GastosShare.pack(s,g,'greedy');
+  old.v=2;old.e=old.e.map(e=>e.slice(0,5));
+  assert.equal(c.GastosShare.unpack(old).state.expenses.length,2);
 });

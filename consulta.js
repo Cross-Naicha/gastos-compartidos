@@ -22,7 +22,7 @@ function renderMeeting() {
   $('viewerTransfers').innerHTML = Array.from(grouped(transfers,'from')).map(([id,payments]) =>
     `<div class="transfer"><h4>${escape(name(id))}</h4>${payments.map(t => `<div class="payment"><span>→ ${escape(name(t.to))}</span><strong>${money(t.amount)}</strong></div>`).join('')}</div>`
   ).join('') || '<p>Todos los balances están saldados.</p>';
-  $('viewerExpenses').innerHTML = state.expenses.map(e => `<div class="report-line"><span>${escape(e.description)}<small>Pagó ${escape(name(e.payer))}</small></span><b>${money(e.cents)}</b></div>`).join('') || '<p>No hay gastos cargados.</p>';
+  $('viewerExpenses').innerHTML = state.expenses.map(e => `<div class="report-line"><span>${escape(e.description)}<small>Pagó ${escape(name(e.payer))}${e.units ? ' · ' + escape(GastosCore.unitDescription(e)) : ''}</small></span><b>${money(e.cents)}</b></div>`).join('') || '<p>No hay gastos cargados.</p>';
   $('viewerTotal').textContent = 'Total gastado: ' + money(GastosCore.balance(state).total);
   $('viewerConsumptionCard').hidden = state.mode !== 'consumption';
   if (state.mode === 'consumption') $('viewerConsumption').innerHTML = GastosCore.consumptionDetails(state).map(p =>

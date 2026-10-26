@@ -36,14 +36,14 @@ function consumptionDetails() { return GastosCore.consumptionDetails(state); }
 function expenseReport() {
   const name = id => state.people.find(p => p.id === id).name;
   return '<section class="report-section"><h4>Detalle de gastos</h4>' +
-    (state.expenses.map(e => `<div class="report-line"><span>${escape(e.description)}<small>Pagó ${escape(name(e.payer))}</small></span><b>${money(e.cents)}</b></div>`).join('') || '<p>No hay gastos cargados.</p>') +
+    (state.expenses.map(e => `<div class="report-line"><span>${escape(e.description)}<small>Pagó ${escape(name(e.payer))}${e.units ? ' · ' + escape(GastosCore.unitDescription(e)) : ''}</small></span><b>${money(e.cents)}</b></div>`).join('') || '<p>No hay gastos cargados.</p>') +
     `<p class="report-total">Total gastado: ${money(balance().total)}</p></section>`;
 }
 function consumptionReport() {
   if (state.mode !== 'consumption') return '';
   return '<section class="report-section"><h4>Consumo por persona</h4>' + consumptionDetails().map(p =>
     `<div class="person-consumption"><h5>${escape(p.name)}</h5>${p.items.map(item => `<div class="report-line"><span>${escape(item.description)}</span><b>${money(item.cents)}</b></div>`).join('') || '<p class="empty">Sin consumos.</p>'}<p class="report-total">Total consumido: ${money(p.total)}</p></div>`
-  ).join('') + '<p class="muted">Los importes son la parte de cada gasto que le corresponde a esa persona. Los centavos sobrantes se asignan en el orden de la lista.</p></section>';
+  ).join('') + '<p class="muted">Los importes corresponden al consumo de cada persona. En unidades, los centavos se ajustan proporcionalmente para conservar el total.</p></section>';
 }
 function participantOptions(selected = null) {
   return `<label class="participant-option"><input type="checkbox" data-all ${selected === null ? 'checked' : ''}>Todos</label><div class="participant-members" ${selected === null ? 'hidden' : ''}>` + state.people.map(p => `<label class="participant-option"><input type="checkbox" data-member value="${escape(p.id)}" ${selected === null || selected.includes(p.id) ? 'checked' : ''}>${escape(p.name)}</label>`).join('') + '</div>';
@@ -80,7 +80,7 @@ function allocationSummary(container, total, target) {
 function expenseEditor(e) {
   const individual = !!e.allocations;
   const suggested = e.allocations || GastosCore.expenseShares(state,e);
-  return `<div class="expense-participants"><fieldset data-sharing="${escape(e.id)}"><legend>Reparto del gasto</legend><label>Reparto<select data-expense-split><option value="shared" ${!individual?'selected':''}>Dividir entre participantes</option><option value="individual" ${individual?'selected':''}>Importes individuales</option></select></label><div data-shared ${individual?'hidden':''}>${participantOptions(e.participants)}</div><div data-individual ${!individual?'hidden':''}>${individualFields(suggested)}<p class="share-help">Dejá vacío a quien no consumió. Guardá los cambios para aplicarlos.</p><p data-allocation-status class="share-help" role="status" aria-live="polite"></p><button type="button" data-save-allocations>Guardar reparto</button></div></fieldset></div>`;
+  return `<div class="expense-participants"><fieldset data-sharing="${escape(e.id)}"><legend>Reparto del gasto</legend>${GastosUnitsUI.controls(individual,!!e.units)}<div data-shared ${individual?'hidden':''}>${participantOptions(e.participants)}</div><div data-individual ${!individual?'hidden':''}><div data-amount-fields ${e.units?'hidden':''}>${individualFields(suggested)}<p class="share-help">Dejá vacío a quien no consumió.</p><p data-allocation-status class="share-help" role="status" aria-live="polite"></p></div><div data-units ${!e.units?'hidden':''}>${GastosUnitsUI.fields(state.people,e.units)}</div></div><button type="button" data-save-allocations>Guardar reparto</button></fieldset></div>`;
 }
 function reopenExpense(id) {
   const field = Array.from($("expenses").querySelectorAll('[data-sharing]')).find(e => e.dataset.sharing === id);
@@ -140,6 +140,7 @@ function render() {
   updateParticipantVisibility();
   $("participants").innerHTML = participantOptions();
   $("individualAmounts").innerHTML = individualFields();
+  $("unitFields").innerHTML = GastosUnitsUI.fields(state.people);
   updateExpenseSplit();
   $("modeHelp").textContent = consumption ? "Dividí cada gasto entre quienes participaron o asigná importes individuales. También podés ajustar los gastos ya cargados." : "Todos los gastos se dividen entre todas las personas. Las selecciones e importes individuales se conservan si cambiás de modo.";
   $("balanceHelp").textContent = consumption ? "Cada gasto usa el reparto elegido: partes iguales entre sus participantes o importes individuales. Los centavos sobrantes de los gastos divididos se asignan en el orden de la lista." : "Todos los gastos se reparten por igual entre todas las personas. Los centavos sobrantes se asignan en el orden de la lista.";
@@ -165,7 +166,7 @@ function render() {
     state.expenses
       .map(
         (e) =>
-          `<details class="expense-card" data-tone="${state.people.findIndex(p => p.id === e.payer) % 4}"><summary><span class="expense-card-title">${escape(e.description)}<small>Pagó ${escape(state.people.find((p) => p.id === e.payer).name)} · ${consumption ? (e.allocations ? 'Importes individuales' : 'Repartido entre ' + consumers(e).length) : 'Partes iguales'}</small></span><strong class="amount">${money(e.cents)}</strong><span class="expense-chevron" aria-hidden="true">⌄</span></summary><div class="expense-card-body">${consumption ? expenseEditor(e) : '<p class="share-help">Este gasto se divide por igual entre todas las personas.</p>'}<button type="button" class="remove expense-delete" data-expense="${escape(e.id)}" aria-label="Eliminar gasto ${escape(e.description)}">Eliminar gasto</button></div></details>`,
+          `<details class="expense-card" data-tone="${state.people.findIndex(p => p.id === e.payer) % 4}"><summary><span class="expense-card-title">${escape(e.description)}<small>Pagó ${escape(state.people.find((p) => p.id === e.payer).name)} · ${consumption ? (e.units ? GastosCore.unitDescription(e) : e.allocations ? 'Importes individuales' : 'Repartido entre ' + consumers(e).length) : 'Partes iguales'}</small></span><strong class="amount">${money(e.cents)}</strong><span class="expense-chevron" aria-hidden="true">⌄</span></summary><div class="expense-card-body">${consumption ? expenseEditor(e) : '<p class="share-help">Este gasto se divide por igual entre todas las personas.</p>'}<button type="button" class="remove expense-delete" data-expense="${escape(e.id)}" aria-label="Eliminar gasto ${escape(e.description)}">Eliminar gasto</button></div></details>`,
       )
       .join("") || '<p class="empty">Todavía no hay gastos.</p>';
   const b = balance();
@@ -201,7 +202,7 @@ function shareMessage(id, transfers, note) {
   }
   if (!transfers.length) lines.push('Todos los balances están saldados.');
   lines.push('', '*Detalle de gastos*');
-  for (const e of state.expenses) lines.push(`• ${e.description}: ${money(e.cents)} — pagó ${name(e.payer)}`);
+  for (const e of state.expenses) lines.push(`• ${e.description}: ${money(e.cents)} — pagó ${name(e.payer)}${e.units ? ' · ' + GastosCore.unitDescription(e) : ''}`);
   if (!state.expenses.length) lines.push('No hay gastos cargados.');
   lines.push('', `*Total: ${money(balance().total)}*`);
   if (state.mode === 'consumption') {
@@ -279,14 +280,19 @@ $("expenseForm").addEventListener("submit", (e) => {
   if (!Number.isSafeInteger(balance().total + cents))
     return say("El importe supera el máximo admitido.");
   const individual = state.mode === 'consumption' && $("expenseSplit").value === 'individual';
-  let allocations = null;
+  let allocations = null, units = null;
   if (individual) {
-    try { allocations = readAllocations($("individualAmounts")); } catch (error) { return say(error.message); }
+    try {
+      if ($("consumptionEntry").value === 'units') {
+        units = GastosUnitsUI.read($("unitFields"),cents,parseAmount);
+        allocations = GastosCore.unitAllocations(state,units,cents);
+      } else allocations = readAllocations($("individualAmounts"));
+    } catch (error) { return say(error.message); }
     if (!GastosCore.validAllocations(state,{cents,allocations})) return say('Los importes individuales deben sumar exactamente ' + money(cents) + '.');
   }
   const participants = state.mode === 'consumption' && !individual ? selection($("participants")) : null;
   if (participants && !participants.length) return say("Elegí al menos una persona que comparta el gasto.");
-  state.expenses.push({ id: uid(), payer, cents, description, participants, allocations });
+  state.expenses.push({ id: uid(), payer, cents, description, participants, allocations, ...(units ? {units} : {}) });
   $("amount").value = "";
   $("description").value = "";
   $("expenseSplit").value = 'shared';
@@ -297,7 +303,7 @@ $("people").addEventListener("click", (e) => {
   const b = e.target.closest("[data-person]");
   if (!b) return;
   const id = b.dataset.person;
-  if (state.expenses.some(e => e.payer !== id && e.allocations?.some(a => a.id === id))) return say('Esta persona tiene consumos con importes individuales. Ajustá o eliminá esos gastos antes de quitarla, para conservar el total pagado.');
+  if (state.expenses.some(e => e.payer !== id && (e.allocations?.some(a => a.id === id) || e.units?.some(v=>v.counts.some(a=>a.id===id))))) return say('Esta persona tiene consumos individuales. Ajustá o eliminá esos gastos antes de quitarla, para conservar el total pagado.');
   if (
     state.expenses.some((e) => e.payer === id || e.participants?.includes(id)) &&
     !confirm(
@@ -317,10 +323,19 @@ $("expenses").addEventListener("click", (e) => {
   if (save) {
     const field = save.closest('[data-sharing]');
     const expense = state.expenses.find(x => x.id === field.dataset.sharing);
-    let allocations;
-    try { allocations = readAllocations(field); } catch (error) { return say(error.message); }
-    if (!GastosCore.validAllocations(state,{...expense,allocations})) return say('Los importes individuales deben sumar exactamente ' + money(expense.cents) + '.');
-    expense.allocations = allocations; expense.participants = null;
+    let allocations, units = null;
+    const individual = field.querySelector('[data-expense-split]').value === 'individual';
+    try {
+      if (!individual) allocations = null;
+      else if (field.querySelector('[data-entry-mode]').value === 'units') {
+        units = GastosUnitsUI.read(field.querySelector('[data-units]'),expense.cents,parseAmount);
+        allocations = GastosCore.unitAllocations(state,units,expense.cents);
+      } else allocations = readAllocations(field.querySelector('[data-amount-fields]'));
+    } catch (error) { return say(error.message); }
+    if (!GastosCore.validAllocations(state,{...expense,allocations,units})) return say('Los importes individuales deben sumar exactamente ' + money(expense.cents) + '.');
+    const participants = individual ? null : selection(field.querySelector('[data-shared]'));
+    if(participants && !participants.length) return say('Elegí al menos una persona.');
+    expense.allocations = allocations; expense.units = units; expense.participants = participants;
     say(''); saveRender(); reopenExpense(expense.id); return;
   }
   const b = e.target.closest("[data-expense]");
@@ -383,43 +398,72 @@ function changeParticipants(event) {
     field.querySelector('[data-individual]').hidden = !individual;
     field.querySelector('[data-shared]').hidden = individual;
     const expense = state.expenses.find(e => e.id === field.dataset.sharing);
-    if (individual) allocationSummary(field,expense.cents,field.querySelector('[data-allocation-status]'));
-    else { expense.allocations = null; say(''); saveRender(); reopenExpense(expense.id); }
+    GastosUnitsUI.animate(field.querySelector('.split-selectors'),individual);
+    if (individual) updateEditorEntry(field,expense);
+    return;
+  }
+  if (input.matches('[data-entry-mode]')) {
+    const field = input.closest('[data-sharing]');
+    updateEditorEntry(field,state.expenses.find(e => e.id === field.dataset.sharing));
     return;
   }
   if (!input.matches('[data-all], [data-member]')) return;
-  const container = input.closest('[data-sharing]') || $("participants");
+  const field = input.closest('[data-sharing]');
+  const container = input.closest('[data-shared]') || $("participants");
   if (input.matches('[data-all]')) {
     for (const member of container.querySelectorAll('[data-member]')) member.checked = input.checked;
   } else container.querySelector('[data-all]').checked = false;
   container.querySelector('.participant-members').hidden = container.querySelector('[data-all]').checked;
-  if (!container.dataset.sharing) return;
+  if (!field) return;
   const participants = selection(container);
   if (participants && !participants.length) {
     say('Cada gasto necesita al menos un participante.');
-    container.innerHTML = participantOptions(state.expenses.find(e => e.id === container.dataset.sharing).participants);
+    container.innerHTML = participantOptions(state.expenses.find(e => e.id === field.dataset.sharing).participants);
     return;
   }
-  state.expenses.find(e => e.id === container.dataset.sharing).participants = participants;
-  say(''); saveRender();
-  const field = Array.from($("expenses").querySelectorAll('[data-sharing]')).find(e => e.dataset.sharing === container.dataset.sharing);
-  if (field) field.closest('details').open = true;
+  say('');
 }
 function updateParticipantVisibility() {
   $("participantsField").hidden = state.mode !== 'consumption' ||
     !$("payer").value || parseAmount($("amount").value) === null || !$("description").value.trim();
-  if ($("expenseSplit").value === 'individual') allocationSummary($("individualAmounts"),parseAmount($("amount").value)||0,$("allocationStatus"));
+  updateExpenseSplit();
 }
 function updateExpenseSplit() {
   const individual = $("expenseSplit").value === 'individual';
+  const units = $("consumptionEntry").value === 'units';
+  GastosUnitsUI.animate($("expenseSplit").closest('.split-selectors'),individual);
   $("participants").hidden = individual;
-  $("individualAmounts").hidden = !individual;
-  $("allocationStatus").hidden = !individual;
-  if (individual) allocationSummary($("individualAmounts"),parseAmount($("amount").value)||0,$("allocationStatus"));
+  $("individualAmounts").hidden = !individual || units;
+  $("allocationStatus").hidden = !individual || units;
+  $("unitFields").hidden = !individual || !units;
+  if (individual && !units) allocationSummary($("individualAmounts"),parseAmount($("amount").value)||0,$("allocationStatus"));
+  if (individual && units) GastosUnitsUI.update($("unitFields"),state,parseAmount($("amount").value)||0,parseAmount,money);
 }
 $("expenseSplit").addEventListener('change', updateExpenseSplit);
+$("consumptionEntry").addEventListener('change', updateExpenseSplit);
 $("individualAmounts").addEventListener('input', updateExpenseSplit);
+$("unitFields").addEventListener('input',updateExpenseSplit);
+$("unitFields").addEventListener('click',event => { if(GastosUnitsUI.click(event,$("unitFields"),state.people))updateExpenseSplit(); });
+function updateEditorEntry(field,expense) {
+  const units = field.querySelector('[data-entry-mode]').value === 'units';
+  field.querySelector('[data-amount-fields]').hidden = units;
+  field.querySelector('[data-units]').hidden = !units;
+  if(units) GastosUnitsUI.update(field.querySelector('[data-units]'),state,expense.cents,parseAmount,money);
+  else allocationSummary(field,expense.cents,field.querySelector('[data-allocation-status]'));
+}
+$("expenses").addEventListener('click',event => {
+  const container = event.target.closest('[data-units]');
+  if(!container) return;
+  if(GastosUnitsUI.click(event,container,state.people)) {
+    const field = container.closest('[data-sharing]');
+    updateEditorEntry(field,state.expenses.find(e => e.id === field.dataset.sharing));
+  }
+});
 $("expenses").addEventListener('input', event => {
+  if(event.target.closest('[data-units]')) {
+    const field=event.target.closest('[data-sharing]');
+    updateEditorEntry(field,state.expenses.find(e=>e.id===field.dataset.sharing)); return;
+  }
   if (!event.target.matches('[data-allocation]')) return;
   const field = event.target.closest('[data-sharing]');
   const expense = state.expenses.find(e => e.id === field.dataset.sharing);
