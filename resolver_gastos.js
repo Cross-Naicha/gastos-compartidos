@@ -148,7 +148,7 @@ function render() {
     state.people
       .map(
         (p) =>
-          `<div class="item"><span>${escape(p.name)}</span><button class="remove" data-person="${escape(p.id)}" aria-label="Eliminar a ${escape(p.name)}">✕</button></div>`,
+          `<div class="person-chip"><span>${escape(p.name)}</span><button type="button" class="remove" data-person="${escape(p.id)}" aria-label="Eliminar a ${escape(p.name)}">✕</button></div>`,
       )
       .join("") ||
     '<p class="empty">Agregá también a quienes no hicieron gastos.</p>';
